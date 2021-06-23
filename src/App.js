@@ -1,19 +1,23 @@
 import logo from './logo.svg';
 import './App.css';
-import * as tf from '@tensorflow/tfjs';
+import * as tf  from '@tensorflow/tfjs';
 import { useEffect, useRef } from 'react';
 
-import * as blazeface from '@tensorflow-models/blazeface';
+
+const blazeface = require('@tensorflow-models/blazeface');
 
 
 function App() {
   const videoRef = useRef(null);
+  const canvasRef = useRef(null);
   var model, mask_model, ctx, videoWidth, videoHeight, canvas,result;
 	const video = document.getElementById('video');
 	const state = {
 	  backend: 'webgl'
 	};
+  
   useEffect(() => {
+    
     async function setupCamera() {
       const stream = await navigator.mediaDevices.getUserMedia({
           'audio': false,
@@ -29,7 +33,7 @@ function App() {
   
     const renderPrediction = async () => {
       tf.engine().startScope()
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
       //estimatefaces model takes in 4 parameter (1) video, returnTensors, flipHorizontal, and annotateBoxes
       const predictions = await model.estimateFaces(video, true,false,false);
       const offset = tf.scalar(127.5);
@@ -65,7 +69,7 @@ function App() {
                 text = "Mask: "+(result[0]*100).toPrecision(3).toString()+"%";
             }
               ctx.lineWidth = "4"
-            ctx.rect(start[0], start[1],size[0], size[1])
+            // ctx.rect(start[0], start[1],size[0], size[1])
             ctx.stroke()
             ctx.font = "bold 15pt sans-serif";
             ctx.fillText(text,start[0]+5,start[1]+20)
@@ -86,15 +90,16 @@ function App() {
         videoRef.current.width = videoWidth;
         videoRef.current.height = videoHeight;
   
-        canvas = document.getElementById('output');
-        canvas.width = videoWidth;
-        canvas.height = videoHeight;
-        ctx = canvas.getContext('2d');
-        ctx.fillStyle = "rgba(255, 0, 0, 0.5)"; 
+        // canvas = document.getElementById('output');
+        // canvasRef.current.width = videoWidth;
+        // canvasRef.current.height = videoHeight;
+        // ctx =canvasRef.current.getContext('2d');
+        // ctx.fillStyle = "rgba(255, 0, 0, 0.5)"; 
   
         model = await blazeface.load();
-        
-        mask_model = await tf.loadLayersModel('./static/models/model.json');
+     
+      
+        mask_model = await tf.loadLayersModel('http://192.168.1.3:8080/model.json');
   
        renderPrediction();
     };
@@ -120,7 +125,7 @@ function App() {
   <div className="container ">
 		<div className="row bg-light" style={{height:"480px"}}>
 			<video ref={videoRef} id="video" playsinline className="border " style={{margin:"auto",display:"inline-block"}}></video>
-			<canvas id="output" className="canvas-output" style={{margin:"auto",position:"relative",top:"-480px",left:"10px"}} />
+			<canvas ref={canvasRef} id="output" className="canvas-output" style={{margin:"auto",position:"relative",top:"-480px",left:"10px"}} />
 			<div className="float-right">
 	    		<a href="https://www.youtube.com/user/chirpieful">
 	    			<img src="../static/img/yicong.jpg" className="rounded" style={{height:"30px",width:"30px",position:"relative",top:"-30px",}} />
@@ -128,6 +133,7 @@ function App() {
 	    	</div>
 		</div> 
     </div>
+    <input type="file" id="jsonUpload"/>
     </div>
   );
 }
